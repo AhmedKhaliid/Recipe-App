@@ -5,6 +5,18 @@ import Root from './pages/Root';
 import ErrorPage from './pages/ErrorPage';
 import Home from './pages/Home';
 import AddRecipe from './pages/AddRecipe';
+import { createTheme, ThemeProvider } from '@mui/material';
+
+const theme = createTheme({
+  palette: {
+    secondary: {
+      main: '#873e6c'
+    },
+    primary: {
+      main: '#873e6c'
+    }
+  }
+});
 
 const router = createBrowserRouter([
   {
@@ -19,7 +31,10 @@ const router = createBrowserRouter([
 
 
 function App() {
-  return <RouterProvider router={router}></RouterProvider>;
+  return <ThemeProvider theme={theme}>
+    <RouterProvider router={router}></RouterProvider>;
+  </ThemeProvider>
+
 }
 
 export default App;
