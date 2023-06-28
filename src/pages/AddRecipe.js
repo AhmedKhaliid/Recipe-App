@@ -34,7 +34,7 @@ const AddRecipe = () => {
 
         setBackEndData({
             title: data.title,
-            ingredients: ingredients,
+            ingredients: ingredients.map(ing => ing.content),
             description: data.des
         })
         console.log(data)
@@ -45,7 +45,7 @@ const AddRecipe = () => {
     const addIng = () => {
         let ingerd = watch('ingre')
         if (ingerd.trim().length > 0) {
-            setIngredients(old => [...old, ingerd])
+            setIngredients(old => [...old, { id: `${Math.random()}`, content: ingerd }])
         }
 
     }
@@ -115,11 +115,11 @@ const AddRecipe = () => {
                                             {(provided) => (
                                                 <ul style={{ listStyleType: 'none' }}  {...provided.droppableProps} ref={provided.innerRef}>
                                                     {ingredients.map((ing, index) => {
-                                                        return <Draggable key={ing} draggableId={ing} index={index}>
+                                                        return <Draggable key={ing.id} draggableId={ing.id} index={index}>
                                                             {(provided) => (
                                                                 <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} >
                                                                     <Stack direction={'row'} spacing={2} justifyContent={'space-between'} alignItems={'center'}>
-                                                                        <Typography ><FaArrowsAltV /> {ing}</Typography>
+                                                                        <Typography ><FaArrowsAltV /> {ing.content}</Typography>
                                                                         <MdDelete size={20} cursor={'pointer'} onClick={() => deleteIngredientsHandler(index)} />
                                                                     </Stack>
                                                                 </li>
