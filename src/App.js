@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import AddRecipe from './pages/AddRecipe';
 import { createTheme, ThemeProvider } from '@mui/material';
 
+
+
 const theme = createTheme({
   palette: {
     secondary: {
@@ -32,9 +34,8 @@ const router = createBrowserRouter([
 
 function App() {
   return <ThemeProvider theme={theme}>
-    <RouterProvider router={router}></RouterProvider>;
+    <RouterProvider router={router}></RouterProvider>
   </ThemeProvider>
-
 }
 
 export default App;

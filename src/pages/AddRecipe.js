@@ -1,26 +1,26 @@
 
 import { Stack, Typography, TextField, Card, CardContent, Button } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import InputAdornment from '@mui/material/InputAdornment';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from "yup";
 import { MdDelete } from "react-icons/md";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { FaArrowsAltV } from "react-icons/fa"
-import { AiFillCloseCircle } from "react-icons/ai"
+import { FaArrowsAltV } from "react-icons/fa";
+import { AiFillCloseCircle } from "react-icons/ai";
+import { useMutation } from 'react-query';
+import { getBase64 } from "../utilities/getBase64";
 
-// const schema = yup.object({
-//     title: yup.string().required('This Field Required.'),
-//     ingre: ingredients.length > 0 ? "" : yup.string().required('This Field Required.'),
-//     des: yup.string().required('This Field Required.')
-// }).required();
 const AddRecipe = () => {
     const [ingredients, setIngredients] = useState([]);
+    const [image, setImage] = useState(null);
+    const [valueInput, setValueInput] = useState('');
+    const [ingArrEmpty, setIngArrEmpty] = useState(false);
 
     const schema = yup.object({
         title: yup.string().required('This Field Required.'),
-        ingre: ingredients.length > 0 ? "" : yup.string().required('This Field Required.'),
+        ingre: ingredients.length === 0 ? yup.string().required('This Field Required.') : "",
         des: yup.string().required('This Field Required.')
     }).required();
 
@@ -28,18 +28,52 @@ const AddRecipe = () => {
         resolver: yupResolver(schema)
     });
 
-    const [backEndData, setBackEndData] = useState({});
+    const { mutate, isLoading, error } = useMutation((backEndData) =>
+        fetch('https://react-http-68f50-default-rtdb.firebaseio.com/recipe.json', {
+            method: 'POST',
+            body: JSON.stringify(backEndData),
+            headers: { "Content-Type": "application/json" }
+        }).then(res => {
+            res.json()
+            if (res.ok) {
+                reset();
+                setIngredients([]);
+                setImage(null)
+                setIngArrEmpty(false)
+                setValueInput('')
+            }
+        }
+        ))
+    useEffect(() => {
+        if (ingredients.length > 0) {
+            setIngArrEmpty(false)
+        }
+    }, [ingredients])
+    const onSubmit = async (data) => {
+        if (ingredients.length === 0) {
+            setIngArrEmpty(true)
+            return
+        }
+        if (data.image[0] === undefined) {
 
-    const onSubmit = data => {
+            const backEndData = {
+                title: data.title,
+                ingredients: ingredients.map(ing => ing.content),
+                description: data.des,
+                image: ''
+            }
+            mutate(backEndData);
+        } else {
+            const base64 = await getBase64(data.image[0])
 
-        setBackEndData({
-            title: data.title,
-            ingredients: ingredients.map(ing => ing.content),
-            description: data.des
-        })
-        console.log(data)
-        reset();
-        setIngredients([]);
+            const backEndData = {
+                title: data.title,
+                ingredients: ingredients.map(ing => ing.content),
+                description: data.des,
+                image: image === null ? "" : base64
+            }
+            mutate(backEndData);
+        };
     };
 
     const addIng = () => {
@@ -57,11 +91,8 @@ const AddRecipe = () => {
         const reorderedItems = Array.from(ingredients);
         const [removed] = reorderedItems.splice(result.source.index, 1);
         reorderedItems.splice(result.destination.index, 0, removed);
-        console.log('reorderedItemsk', reorderedItems)
 
         setIngredients(reorderedItems);
-        console.log('result', result)
-        console.log("reorderedItems", reorderedItems)
     };
 
     const deleteInputIngredients = () => {
@@ -72,10 +103,18 @@ const AddRecipe = () => {
         const newIngredientsArr = ingredients.filter((_, index) => index !== ind);
         setIngredients(newIngredientsArr)
     }
-    console.log("backEndData", backEndData)
-    console.log("ingredients", ingredients)
 
-    return <Stack paddingTop={'30px'} alignItems={'center'}>
+
+
+    const onImageChange = (event) => {
+        event.preventDefault();
+        if (event.target.files && event.target.files[0]) {
+            setImage(URL.createObjectURL(event.target.files[0]));
+        }
+        setValueInput(event.target.value)
+    }
+
+    return <Stack paddingTop={'30px'} paddingBottom={'30px'} alignItems={'center'}>
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack spacing={3} width={'800px'}>
                 <Stack direction={'row'} spacing={1} justifyContent={'space-between'}>
@@ -111,7 +150,7 @@ const AddRecipe = () => {
                                         />
                                     </Stack>
                                     <DragDropContext onDragEnd={onDragEnd}>
-                                        <Droppable droppableId={`${ingredients}`}>
+                                        <Droppable droppableId={`${Math.random()}`}>
                                             {(provided) => (
                                                 <ul style={{ listStyleType: 'none' }}  {...provided.droppableProps} ref={provided.innerRef}>
                                                     {ingredients.map((ing, index) => {
@@ -136,7 +175,7 @@ const AddRecipe = () => {
 
                         </Stack>
                         <Stack  >
-                            <Typography color={'#c94343'}>{errors.ingre?.message}</Typography>
+                            {(ingArrEmpty || errors.ingre) && <Typography color={'#c94343'}>This Field Required.</Typography>}
                         </Stack>
                     </Stack>
                 </Stack>
@@ -153,11 +192,39 @@ const AddRecipe = () => {
                         <Typography color={'#c94343'}>{errors.des?.message}</Typography>
                     </Stack>
                 </Stack>
+                <Stack direction={'row'} spacing={1} justifyContent={'space-between'}>
+                    <Typography fontSize={'20px'} fontWeight={'bold'} color={'#873e6c'}>Upload Image:</Typography>
+                    <Stack spacing={2}>
+                        <Card sx={{ width: '600px' }}>
+                            <CardContent>
+                                <Stack direction={'row'} justifyContent={'space-between'}>
+                                    <input value={valueInput} {...register("image")} onChange={onImageChange} type="file" accept='image/*' />
+                                    <AiFillCloseCircle cursor={'pointer'} onClick={() => {
+                                        setImage(null);
+                                        setValueInput('')
+                                    }} />
+                                </Stack>
+                            </CardContent>
+                        </Card>
+                        <Card sx={{ width: '600px', minHeight: "150px" }}>
+                            <CardContent>
+                                <img src={image} alt="uploaded imag" style={{
+                                    objectFit: "contain",
+                                    width: '100%',
+                                    height: '300px'
+                                }} />
+                            </CardContent>
+                        </Card>
+                    </Stack>
+                </Stack>
                 <Stack direction={'row'} justifyContent={'flex-end'}>
-                    <Button variant="outlined" type="submit">Add</Button>
+                    <Stack spacing={1}>
+                        <Button disabled={isLoading ? true : false} variant="outlined" type="submit">Add</Button>
+                        {error && <Typography color={'#c94343'}>{error.message}</Typography>}
+                    </Stack>
                 </Stack>
             </Stack>
-        </form>
-    </Stack>
+        </form >
+    </Stack >
 }
 export default AddRecipe;
