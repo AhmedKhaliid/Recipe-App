@@ -2,12 +2,10 @@
 import './App.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Root from './pages/Root';
-import ErrorPage from './pages/ErrorPage';
 import Home from './pages/Home';
 import AddRecipe from './pages/AddRecipe';
-import { createTheme, ThemeProvider } from '@mui/material';
-
-
+import { createTheme, Stack, ThemeProvider } from '@mui/material';
+import Detalis from './pages/Detalis';
 
 const theme = createTheme({
   palette: {
@@ -23,19 +21,23 @@ const theme = createTheme({
 const router = createBrowserRouter([
   {
     path: '/', element: <Root />,
-    errorElement: <ErrorPage />,
     children: [
       { path: '/', element: <Home /> },
-      { path: '/addRecipe', element: <AddRecipe /> }
+      { path: '/addRecipe', element: <AddRecipe /> },
+      { path: ':id', element: <Detalis /> }
     ]
   }
 ]);
 
 
 function App() {
-  return <ThemeProvider theme={theme}>
-    <RouterProvider router={router}></RouterProvider>
-  </ThemeProvider>
+  return <Stack height={'100vh'} sx={{ backgroundColor: 'whitesmoke' }}>
+    <Stack>
+      <ThemeProvider theme={theme}>
+        <RouterProvider router={router}></RouterProvider>
+      </ThemeProvider>
+    </Stack>
+  </Stack>
 }
 
 export default App;

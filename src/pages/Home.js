@@ -1,12 +1,18 @@
 
-import { Stack, Typography, Card, CardMedia, CardContent } from "@mui/material";
+import { Stack, Typography, Card, Rating } from "@mui/material";
+import Grid from '@mui/material/Grid';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useEffect, useState } from "react";
 import { SlNotebook } from 'react-icons/sl';
-import { useQuery } from 'react-query'
-const Home = () => {
-    const [allRrecipe, setAllRecipe] = useState([]);
+import { useQuery } from 'react-query';
+import pic from './../meal-icon.jpg';
+import { useNavigate } from "react-router-dom";
 
-    const { isLoading, error, data } = useQuery('repoData', () =>
+
+const Home = () => {
+    const navigate = useNavigate();
+    const [allRrecipe, setAllRecipe] = useState([]);
+    const { isLoading, isFetching, error, data } = useQuery('repoData', () =>
         fetch('https://react-http-68f50-default-rtdb.firebaseio.com/recipe.json').then(res =>
             res.json()
         )
@@ -20,15 +26,14 @@ const Home = () => {
                     title: data[prop].title,
                     description: data[prop].description,
                     ingredients: data[prop].ingredients,
-                    image: data[prop].image
+                    image: data[prop].image,
+                    rating: data[prop].rating
                 })
             }
             setAllRecipe(getRecipe)
         }
     }, [data])
-
-
-    return <Stack>
+    return <Stack paddingBottom={'20px'} spacing={2}>
         <Stack direction={'row'} justifyContent={'center'} paddingTop={'40px'} >
             <Stack direction={'row'} spacing={2}><SlNotebook size={35} color="#f1bf62" />
                 <Typography fontWeight={'bold'} fontSize={'25px'} color={'#873e6c'}> ALL RECIPES
@@ -36,47 +41,40 @@ const Home = () => {
             </Stack>
         </Stack>
         <Stack alignItems={'center'}>
-            {isLoading && <Typography fontWeight={'bold'} color={'#873e6c'}>Loading...</Typography>}
+            {(isLoading || isFetching) && <Stack direction={'row'} spacing={1} alignItems={'center'}>
+                <Typography fontWeight={'bold'} color={'#873e6c'}>Loading</Typography>
+                <CircularProgress size={15} />
+            </Stack>}
             {error && <Typography fontWeight={'bold'} color={'#873e6c'}>An error has occurred: {error.message}</Typography>}
         </Stack>
-        <Stack padding={'30px'} direction={'row'} gap={3} flexWrap={'wrap'}>
+        <Grid container spacing={2} width={"80%"} alignSelf={"center"}  >
             {allRrecipe.map(recipe => {
-                return <Card key={recipe.id} sx={{ minWidth: 300, maxWidth: 345 }} >
-                    <CardMedia
-                        sx={{ height: 220, objectFit: "cover" }}
-                        image={`data:image/jpeg;base64,${recipe.image}`}
-                        title={recipe.image === "" ? 'no image uploaded' : recipe.title}
-                        component="img"
+                return <Grid item key={recipe.id} xs={4}>
 
-                    />
-                    <CardContent>
-                        <Stack spacing={1}>
-                            <Typography gutterBottom variant="h4" >
+                    <Card onClick={() => navigate(recipe.id)} sx={{
+                        backgroundImage: recipe.image === '' ? `url(${pic})` : `url(data:image/jpeg;base64,${recipe.image})`,
+                        backgroundSize: 'cover',
+                        cursor: 'pointer',
+                        width: 370,
+                        height: 400,
+                        boxShadow: '10px 10px 10px #00000070',
+                        '&:hover': {
+                            opacity: 0.6
+                        },
+                    }} variant="outlined">
+                        <Stack width={'100%'} height={'100%'} color={'white'} spacing={1} alignItems={'center'} marginTop={'300px'} sx={{ backgroundColor: '#0000008f' }} >
+                            <Typography marginTop={'15px'} variant="h6" >
                                 {recipe.title}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Description: {recipe.description}
-                            </Typography>
-                            <Stack direction={'row'} spacing={0.5}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Ingredients:
-                                </Typography>
-                                <Stack>
-                                    {recipe.ingredients.map((ing, index) => {
-                                        return <Typography key={index} variant="body2" color="text.secondary">
-                                            - {ing}
-                                        </Typography>
-                                    })}
-                                </Stack>
-                            </Stack>
-                            {/* <Typography variant="body2" color="text.secondary">
-                            Ingredients: {recipe.ingredients.toString()}
-                        </Typography> */}
+                            <Rating
+                                readOnly
+                                value={5}
+                            />
                         </Stack>
-                    </CardContent>
-                </Card>
+                    </Card>
+                </Grid>
             })}
-        </Stack>
+        </Grid>
     </Stack>
 }
 export default Home;
