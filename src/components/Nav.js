@@ -11,7 +11,7 @@ const Nav = () => {
         <Stack padding={'0 270px 0 '} >
             <Stack width={'100%'} direction={'row'} justifyContent={'space-between'} alignItems={'center'}>
                 <Stack >
-                    <Typography fontSize={'50px'} color={'#723f5fe6'} fontFamily={'Bitter,Georgia,Cambria,Times New Roman,Times,serif'}>pinch <Typography component="span" display={'inline'} fontSize={'30px'} color="#723f5f40">of</Typography> yum</Typography>
+                    <Typography fontSize={'50px'} color={'#723f5fe6'} fontFamily={'Bitter,Georgia,Cambria,Times New Roman,Times,serif'}>pinch <Typography component="span" display={'inline'} fontStyle={'oblique'} fontSize={'30px'} color="#723f5f40">of</Typography> yum</Typography>
                 </Stack>
                 <Stack direction={'row'} spacing={4} >
                     <NavLink to={'/'} style={({ isActive }) => ({

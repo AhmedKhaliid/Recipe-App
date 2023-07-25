@@ -10,8 +10,12 @@ import { MdDelete } from "react-icons/md";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { FaArrowsAltV } from "react-icons/fa";
 import { AiFillCloseCircle } from "react-icons/ai";
-import { useMutation } from 'react-query';
+import { useMutation, useQuery } from 'react-query';
 import { getBase64 } from "../utilities/getBase64";
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import * as React from 'react';
+
+const filter = createFilterOptions();
 
 const AddRecipe = () => {
     const [ingredients, setIngredients] = useState([]);
@@ -19,6 +23,9 @@ const AddRecipe = () => {
     const [valueInput, setValueInput] = useState('');
     const [ingArrEmpty, setIngArrEmpty] = useState(false);
     const [alertMessage, setAlertMessage] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [value, setValue] = useState(null);
+    const [categoryValid, setCategoryValid] = useState(true);
 
     const schema = yup.object({
         title: yup.string().required('This Field Required.'),
@@ -44,28 +51,41 @@ const AddRecipe = () => {
                 setIngArrEmpty(false)
                 setValueInput('')
                 setAlertMessage({ type: "success", message: "the recipe is successfully added" })
+                setValue(null)
 
             }
         }
         ))
+
     useEffect(() => {
         if (ingredients.length > 0) {
             setIngArrEmpty(false)
         }
     }, [ingredients])
+    useEffect(() => {
+        if (value) {
+            setCategoryValid(true);
+        }
+    }, [value])
 
     const onSubmit = async (data) => {
-        if (ingredients.length === 0) {
-            setIngArrEmpty(true)
+        if (ingredients.length === 0 || value === null) {
+            ingredients.length === 0 ? setIngArrEmpty(true) : setIngArrEmpty(false);
+            value === null ? setCategoryValid(false) : setCategoryValid(true);
             return
         }
         const backEndData = {
             title: data.title,
+            category: value.title,
             ingredients: ingredients.map(ing => ing.content),
             description: data.des,
             image: data.image[0] ? await getBase64(data.image[0]) : '',
         }
         mutate(backEndData);
+        let repetedCategory = categories.find(cat => cat.title === value.title)
+        if (repetedCategory === undefined) {
+            mutateCategory(value.title);
+        }
     };
 
     const addIng = () => {
@@ -117,6 +137,39 @@ const AddRecipe = () => {
             }, 5000)
     }, [alertMessage]);
 
+    const { data: categoryData } = useQuery('repoData', () =>
+        fetch('https://react-http-68f50-default-rtdb.firebaseio.com/category.json').then(res =>
+            res.json()
+        )
+    )
+
+    useEffect(() => {
+        if (categoryData) {
+            let cate = [];
+            for (let prop in categoryData) {
+                cate.push({
+                    id: prop,
+                    title: categoryData[prop]
+                })
+            }
+            setCategories(cate);
+        }
+    }, [categoryData])
+
+    const { mutate: mutateCategory } = useMutation((value) =>
+        fetch('https://react-http-68f50-default-rtdb.firebaseio.com/category.json', {
+            method: "POST",
+            body: JSON.stringify(value),
+            headers: { "Content-Type": "application/json" }
+        }).then(res =>
+            res.json()
+        ));
+
+
+    // fetch('https://react-http-68f50-default-rtdb.firebaseio.com/category.json', {
+    //     method: 'DELETE',
+    //     headers: { "Content-Type": "application/json" }
+    // })
 
     return <Stack paddingTop={'30px'} paddingBottom={'30px'} alignItems={'center'}>
         {alertMessage && <Stack alignItems={'center'} margin={'20px'} >
@@ -124,6 +177,7 @@ const AddRecipe = () => {
         </Stack>}
         <Card>
             <CardContent>
+
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <Stack spacing={3} width={'800px'}>
                         <Stack direction={'row'} spacing={1} justifyContent={'space-between'}>
@@ -131,6 +185,68 @@ const AddRecipe = () => {
                             <Stack>
                                 <TextField {...register('title')} type="text" sx={{ width: '600px' }} />
                                 <Typography color={'#c94343'}>{errors.title?.message}</Typography>
+                            </Stack>
+                        </Stack>
+                        <Stack direction={'row'} spacing={1} justifyContent={'space-between'}>
+                            <Typography fontSize={'20px'} fontWeight={'bold'} color={'#873e6c'}>Category:</Typography>
+                            <Stack>
+                                <Autocomplete
+                                    value={value}
+                                    onChange={(event, newValue) => {
+                                        if (typeof newValue === 'string') {
+                                            setValue({
+                                                title: newValue,
+                                            });
+
+                                        } else if (newValue && newValue.inputValue) {
+                                            // Create a new value from the user input
+                                            setValue({
+                                                title: newValue.inputValue,
+                                            });
+                                        } else {
+                                            setValue(newValue);
+                                        }
+                                    }}
+                                    filterOptions={(options, params) => {
+                                        const filtered = filter(options, params);
+
+                                        const { inputValue } = params;
+                                        // Suggest the creation of a new value
+                                        const isExisting = options.some((option) => inputValue === option.title);
+                                        if (inputValue !== '' && !isExisting) {
+                                            filtered.push({
+                                                inputValue,
+                                                title: `Add "${inputValue}"`,
+                                            });
+                                        }
+
+                                        return filtered;
+                                    }}
+                                    selectOnFocus
+                                    clearOnBlur
+                                    handleHomeEndKeys
+                                    id="free-solo-with-text-demo"
+                                    options={categories}
+                                    getOptionLabel={(option) => {
+                                        // Value selected with enter, right from the input
+                                        if (typeof option === 'string') {
+                                            return option;
+                                        }
+                                        // Add "xxx" option created dynamically
+                                        if (option.inputValue) {
+                                            return option.inputValue;
+                                        }
+                                        // Regular option
+                                        return option.title;
+                                    }}
+                                    renderOption={(props, option) => <li {...props}>{option.title}</li>}
+                                    sx={{ width: '600px' }}
+                                    freeSolo
+                                    renderInput={(params) => (
+                                        <TextField {...params} label='select category' />
+                                    )}
+                                />
+                                {!categoryValid && <Typography color={'#c94343'}>Select Category</Typography>}
                             </Stack>
                         </Stack>
                         <Stack direction={'row'} spacing={1} justifyContent={'space-between'} alignItems={'center'}>
@@ -237,6 +353,7 @@ const AddRecipe = () => {
                         </Stack>
                     </Stack>
                 </form >
+
             </CardContent>
         </Card>
     </Stack >

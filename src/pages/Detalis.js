@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
 import pic from './../meal-icon.jpg';
+import { BiCategory } from 'react-icons/bi';
+
 
 
 
@@ -39,6 +41,7 @@ const Detalis = () => {
                     description: data[prop].description,
                     ingredients: data[prop].ingredients,
                     image: data[prop].image,
+                    category: data[prop].category
                 })
             }
             const recipe = getRecipe.filter(re => re.id === id)
@@ -62,7 +65,14 @@ const Detalis = () => {
                             readOnly
                             value={5}
                         />
+                        <Stack direction={'row'} spacing={1} alignItems={'center'}>
+                            <BiCategory size={20} />
+                            <Typography fontWeight={'bold'} variant="h6" color='#873e6c' >
+                                {recipe.category}
+                            </Typography>
+                        </Stack>
                     </Stack>
+
                 </Stack>
 
                 <Stack spacing={3}>
